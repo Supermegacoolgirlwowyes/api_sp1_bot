@@ -1,0 +1,2 @@
+2020-09-21 20:41:20,512 - Homework_bot - INFO - Homework not been reviewed yet.
+2020-09-21 20:58:04,205 - Homework_bot - ERROR - Connection Error: ('Connection aborted.', ConnectionResetError(54, 'Connection reset by peer'))

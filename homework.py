@@ -15,7 +15,7 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 PRAKTIKUM_API_URL = 'https://praktikum.yandex.ru/api/user_api/{}/'
 
 logging.basicConfig(
-    filename='homework_bot.log',
+    filename='homework.log',
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )

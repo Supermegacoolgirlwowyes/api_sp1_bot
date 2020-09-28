@@ -25,25 +25,43 @@ bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
 def parse_homework_status(homework):
     logger = logging.getLogger('parse_homework_status')
+    status_verdict = {
+        'approved': 'Ревьюеру всё понравилось, '
+                    'можно приступать к следующему уроку.',
+        'rejected': 'К сожалению в работе нашлись ошибки.'
+    }
+    errors = ''
+
     try:
-        homework_name = homework.get('homework_name')
-        status = homework['status']
-        if status == 'approved':
-            verdict = u'Ревьюеру всё понравилось, ' \
-                      u'можно приступать к следующему уроку.'
-        elif status == 'rejected':
-            verdict = u'К сожалению в работе нашлись ошибки.'
-        return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+        homework_name = homework['homework_name']
     except KeyError as err:
         logger.error(f'Key Error: {err} - no such key in response')
-        return "Houston! We've got a problem. " \
-               "Status of your homework is not available. Check logs."
+        errors += 'homework_name'
+
+    try:
+        status = homework['status']
+    except KeyError as err:
+        logger.error(f'Key Error: {err} - no such key in response')
+        errors += 'status'
+
+    if errors != '':
+        return "Houston! We've got a problem with key(s)" \
+               "in a 'parse_homework_status' function. Check logs."
+
+    try:
+        verdict = status_verdict[status]
+        return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+    except KeyError:
+        return f'Cтатус работы "{status}". Подробности на сайте.'
 
 
 def get_homework_statuses(current_timestamp):
+    if current_timestamp is None:
+        current_timestamp = int(time.time())
     logger = logging.getLogger('get_homework_statuses')
     params = {'from_date': current_timestamp}
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
+
     try:
         homework_statuses = requests.get(
             PRAKTIKUM_API_URL.format('homework_statuses'),
@@ -52,19 +70,17 @@ def get_homework_statuses(current_timestamp):
             timeout=10
         )
         return homework_statuses.json()
+
     except requests.exceptions.Timeout as err:
-        logger.error(f'Timeout Error: {err}, '
-                     f'headers = {headers}, params: {params}')
+        logger.error(f'Timeout Error: {err}')
     except requests.exceptions.HTTPError as err:
-        logger.error(f'HTTP Error: {err}, '
-                     f'headers = {headers}, params: {params}')
+        logger.error(f'HTTP Error: {err}')
     except requests.exceptions.ConnectionError as err:
-        logger.error(f'Connection Error: {err}, '
-                     f'headers = {headers}, params: {params}')
+        logger.error(f'Connection Error: {err}')
     except requests.exceptions.RequestException as err:
-        logger.error(f'Some error has happened: {err}, '
-                     f'headers = {headers}, params: {params}')
-    return
+        logger.error(f'Error: {err}')
+    logger.info(f'headers = {headers}, params: {params}')
+    return {'error': 'Some request error happened.'}
 
 
 def send_message(message):
@@ -86,10 +102,12 @@ def main():
                     )
                 )
                 return
+            elif new_homework.get('error'):
+                logging.info(new_homework['error'])
             else:
                 logging.info('Homework has not been '
                              'uploaded or reviewed yet.')
-            current_timestamp = int(time.time())
+            current_timestamp = new_homework.get('current_date')
             time.sleep(1200)
 
         except Exception as e:
@@ -102,11 +120,11 @@ def main():
                              'А мы запустим его ещё раз через 30 минут.')
                 time.sleep(1800)
                 continue
-            elif tries == 200:
+            if tries == 200:
                 send_message('Ну так не дело не пойдёт. '
                              'Опять падает. Бот пойдёт отдыхать, '
                              'а ты разбираться с ошибками.')
-                return
+                SystemExit(666)
 
 
 if __name__ == '__main__':

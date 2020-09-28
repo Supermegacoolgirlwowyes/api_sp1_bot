@@ -30,8 +30,8 @@ def parse_homework_status(homework):
                     'можно приступать к следующему уроку.',
         'rejected': 'К сожалению в работе нашлись ошибки.'
     }
-    errors = ''
 
+    errors = ''
     try:
         homework_name = homework['homework_name']
     except KeyError as err:
@@ -45,14 +45,15 @@ def parse_homework_status(homework):
         errors += 'status'
 
     if errors != '':
-        return "Houston! We've got a problem with key(s)" \
+        return "Houston! We've got a problem with key(s) " \
                "in a 'parse_homework_status' function. Check logs."
 
     try:
         verdict = status_verdict[status]
         return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
     except KeyError:
-        return f'Cтатус работы "{status}". Подробности на сайте.'
+        return f'Cтатус работы "{homework_name}" - "{status}". ' \
+               f'Подробности на сайте.'
 
 
 def get_homework_statuses(current_timestamp):
